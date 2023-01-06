@@ -3,6 +3,8 @@ using HarmonyLib;
 using PotionCraft.ManagersSystem;
 using PotionCraft.NotificationSystem;
 using PotionCraft.ObjectBased.UIElements.PotionCraftPanel;
+using PotionCraft.ScriptableObjects.Potion;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -18,28 +20,37 @@ namespace LegendaryRecipePin.Patches
         /// </summary>
         public static void CompareBrewedToPinned()
         {
-            var brewed = Managers.Potion.potionCraftPanel.previousPotionRecipe.effects;
-            List<string> brewedEffects = Utilities.Effects.ToList(brewed.ToList());
-            if (Plugin.currentPinned != null)
+            Potion potion = Managers.Potion.GeneratePotionFromCurrentPotion();
+
+            if (potion == null)
             {
-                var pinnedPotionBrewed = Plugin.currentPinned.Item2.All(brewedEffects.Contains);
-                if (pinnedPotionBrewed)
-                {
-                    Notification.ShowText("Legendary Recipe Pin", "Pinned potion brewed!", Notification.TextType.EventText);
-                    PinHolder.Clear();
-                    Plugin.currentPinned = null;
-                }
+                Log.LogError("Potion was null");
+                return;
             }
-            else
+
+            if (potion.effects.Length != Plugin.currentPinned.Item2.Count)
             {
-                Log.LogInfo("No pinned recipe!");
+                return;
             }
+
+            List<string> pinned = Plugin.currentPinned.Item2;
+            List<string> potionEffects = Utilities.Effects.ToList(potion.effects.ToList());
+            bool doesBrewedMatchPinned = pinned.All(potionEffects.Contains);
+
+            if (!doesBrewedMatchPinned)
+            {
+                return;
+            }
+
+            Notification.ShowText("Legendary Recipe Pin", "Pinned potion brewed!", Notification.TextType.EventText);
+            PinHolder.Clear();
+            Plugin.currentPinned = new Tuple<string, List<string>>("", new List<string>());
         }
 
-        [HarmonyPostfix, HarmonyPatch(typeof(PotionCraftPanel), "MakePotion")]
-        public static void MakePotion_Postfix()
+        [HarmonyPrefix, HarmonyPatch(typeof(PotionFinishingButton), "OnButtonReleasedPointerInside")]
+        public static void OnButtonReleasedPointerInside_Prefix()
         {
-            CompareBrewedToPinned();
+            CompareBrewedToPinned();   
         }
     }
 }

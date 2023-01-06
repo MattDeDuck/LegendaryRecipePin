@@ -1,18 +1,20 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
+using PotionCraft.ScriptableObjects.Potion;
 using System;
 using System.Collections.Generic;
 
 namespace LegendaryRecipePin
 {
-    [BepInPlugin(PluginInfo.PLUGIN_GUID, "LegendaryRecipePin", "1.0.0.0")]
+    [BepInPlugin(PluginInfo.PLUGIN_GUID, "LegendaryRecipePin", "1.0.1.0")]
     public class Plugin : BaseUnityPlugin
     {
         public static ManualLogSource Log { get; set; }
         public const string PLUGIN_GUID = "com.mattdeduck.legendaryrecipepin";
 
-        public static Tuple<string, List<string>> currentPinned;
+        public static Tuple<string, List<string>> currentPinned = new Tuple<string, List<string>>("", new List<string>());
+        public static Potion savedPotion;
 
         private void Awake()
         {
